@@ -1,42 +1,45 @@
 #include "definitions.h"
 #include "mainwindow.h"
 #include "windowbuilder.h"
+#include "todoengine.h"
 enum
-  {
+{
     TASK_ID= 0,
     TASK_DESCRIPTION,
     NUM_COLS
-  };
-static GObject* task_window;
-
+};
+static GObject* task_window=NULL;
+static GtkListStore* list_store=NULL;
+static void add_task_to_ui(TodoTask* task){
+    GtkTreeIter iter;
+    gtk_list_store_append(list_store,&iter);
+    gtk_list_store_set(list_store,&iter,TASK_ID,task->id,TASK_DESCRIPTION,task->description,-1);
+}
 static void on_task_added(GObject* obj,gpointer data){
     assert(data!=NULL);
-    char* task=(char*)data;
+    TodoTask* task=(TodoTask*)data;
     assert(task!=NULL);
-    g_print("size %d\n",sizeof(data));
-    g_print("We are here %s\n",task);
+    add_task_to_ui(task);
 }
 GObject* todo_mainwindow_init(){
     GObject* mainwindow=NULL;
     GObject* tasks_treeview;
 
     GtkBuilder* builder=gtk_builder_new();
+
     mainwindow=wb_build_from_file(&builder,"../ui/mainwindow.ui","main_window");
     assert(mainwindow!=NULL);
+
     gtk_builder_connect_signals(builder,NULL);
+
     tasks_treeview=gtk_builder_get_object(builder,"tasks_trv");
     init_treeview(&tasks_treeview);
+
     task_window=todo_taskwindow_init();
     assert(task_window!=NULL);
-    TodoTask* task=g_malloc(sizeof(TodoTask));
-    task->id="taskID";
-    task->description="Walk dog";
-    char* x="this is a test";
-    char* str=g_malloc(strlen(x)+1);
-    strcpy(str,x);
-   g_print("The size %d\n",sizeof(x));
-    g_signal_connect(task_window,"task-added",G_CALLBACK(on_task_added),str);
-    
+
+    g_signal_connect(task_window,"task-added",G_CALLBACK(on_task_added),NULL);
+
     return mainwindow;
 }
 
@@ -44,7 +47,6 @@ void init_treeview(GObject** treeview){
     assert(*treeview!=NULL);
     GtkTreeIter iter;
     GtkTreeViewColumn* task_description_col;
-    GtkListStore* list_store;
     /*GtkTreeViewColumn* task_id_col;*/
 
     GtkCellRenderer* renderer=gtk_cell_renderer_text_new();
@@ -82,7 +84,7 @@ void todo_on_add_btn_clicked(){
     // if task window hasn't been created, create it.
 
     todo_taskwindow_display(&task_window);
-    
+
 }
 
 void todo_on_edit_btn_clicked(){
