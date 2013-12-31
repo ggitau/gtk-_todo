@@ -2,6 +2,7 @@
 #define __MAINWINDOW_H
 #include<gtk/gtk.h>
 #include<assert.h>
+#include<string.h>
 #include "taskwindow.h"
 GObject* todo_mainwindow_init();
 void init_treeview(GObject** treeview);

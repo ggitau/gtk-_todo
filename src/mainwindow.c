@@ -1,3 +1,4 @@
+#include "definitions.h"
 #include "mainwindow.h"
 #include "windowbuilder.h"
 enum
@@ -7,6 +8,14 @@ enum
     NUM_COLS
   };
 static GObject* task_window;
+
+static void on_task_added(GObject* obj,gpointer data){
+    assert(data!=NULL);
+    char* task=(char*)data;
+    assert(task!=NULL);
+    g_print("size %d\n",sizeof(data));
+    g_print("We are here %s\n",task);
+}
 GObject* todo_mainwindow_init(){
     GObject* mainwindow=NULL;
     GObject* tasks_treeview;
@@ -17,8 +26,20 @@ GObject* todo_mainwindow_init(){
     gtk_builder_connect_signals(builder,NULL);
     tasks_treeview=gtk_builder_get_object(builder,"tasks_trv");
     init_treeview(&tasks_treeview);
+    task_window=todo_taskwindow_init();
+    assert(task_window!=NULL);
+    TodoTask* task=g_malloc(sizeof(TodoTask));
+    task->id="taskID";
+    task->description="Walk dog";
+    char* x="this is a test";
+    char* str=g_malloc(strlen(x)+1);
+    strcpy(str,x);
+   g_print("The size %d\n",sizeof(x));
+    g_signal_connect(task_window,"task-added",G_CALLBACK(on_task_added),str);
+    
     return mainwindow;
 }
+
 void init_treeview(GObject** treeview){
     assert(*treeview!=NULL);
     GtkTreeIter iter;
@@ -59,9 +80,7 @@ void todo_mainwindow_show(GObject** mainwindow){
 void todo_on_add_btn_clicked(){
     //TODO not yet implemented
     // if task window hasn't been created, create it.
-    if(task_window==NULL){
-        task_window=todo_taskwindow_init();
-    }
+
     todo_taskwindow_display(&task_window);
     
 }
