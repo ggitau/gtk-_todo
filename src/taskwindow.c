@@ -53,7 +53,7 @@ static void on_cancel_btn_clicked(){
 static void on_save_btn_clicked(){
     TodoTask* task=get_task();
     assert(task!=NULL);
-    g_signal_emit_by_name(task_window,"task-added",task);
+    g_signal_emit_by_name(task_window,"todotask-added",task);
     gtk_widget_hide(GTK_WIDGET(task_window));
     clear_text_buffer();
 }
@@ -86,7 +86,7 @@ GObject* todo_taskwindow_init(){
     gtk_builder_connect_signals(builder,NULL);
     connect_signals(task_window);
 
-    g_signal_new("task-added",G_TYPE_OBJECT,G_SIGNAL_RUN_FIRST,0,NULL,NULL,g_cclosure_marshal_VOID__POINTER,G_TYPE_NONE,1,G_TYPE_POINTER);
+    g_signal_new("todotask-added",G_TYPE_OBJECT,G_SIGNAL_RUN_FIRST,0,NULL,NULL,g_cclosure_marshal_VOID__POINTER,G_TYPE_NONE,1,G_TYPE_POINTER);
 
     return task_window;
 }

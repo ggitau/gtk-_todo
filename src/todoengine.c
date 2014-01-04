@@ -6,8 +6,8 @@ void todo_engine_add_task(TodoTask* task,GData** data_list){
     todo_taskwindow_init();
     assert(task!=NULL);
     assert(task->id!=NULL);
-    assert(data_list!=NULL);
-    assert(*data_list!=NULL);
+    /*assert(data_list!=NULL);*/
+    /*assert(*data_list!=NULL);*/
 
     GQuark quark=g_quark_from_string(task->id);
     g_datalist_id_set_data(data_list,quark,(gpointer)task);

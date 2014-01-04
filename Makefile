@@ -3,8 +3,8 @@
 # --------------------------------------------------------
 #gcc `pkg-config --cflags gtk+-3.0` -o main src/main.c src/mainwindow.h src/mainwindow.c `pkg-config --libs gtk+-3.0` `pkg-config --libs gmodule-2.0` 
 CC=gcc
-CFLAGS=-g -Wall `pkg-config --cflags gtk+-3.0`
-LIBS=`pkg-config --libs gtk+-3.0` `pkg-config --libs gmodule-2.0`
+CFLAGS=-g -Wall `pkg-config --cflags gtk+-3.0 pkg-config --cflags json-glib-1.0`
+LIBS=`pkg-config --libs gtk+-3.0` `pkg-config --libs gmodule-2.0 pkg-config --libs json-glib-1.0`
 # Add more object files below
 OBJECTS=main.o mainwindow.o taskwindow.o todoengine.o windowbuilder.o
 
