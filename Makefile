@@ -9,9 +9,9 @@ LIBS=`pkg-config --libs gtk+-3.0` `pkg-config --libs gmodule-2.0 pkg-config --li
 OBJECTS=main.o mainwindow.o taskwindow.o todoengine.o windowbuilder.o
 
 EXECUTABLE_FOLDER=bin
-EXECUTABLE=$(EXECUTABLE_FOLDER)/main
+EXECUTABLE=$(EXECUTABLE_FOLDER)/gtodo
 
-main: $(OBJECTS)
+gtodo: $(OBJECTS)
 	$(CC) $(CFLAGS) -o $(EXECUTABLE) $(OBJECTS) $(LIBS)
 main.o: src/main.c src/mainwindow.h
 	$(CC) $(CFLAGS) -c  src/main.c $(LIBS)

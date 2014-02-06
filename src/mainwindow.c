@@ -19,8 +19,8 @@
  *
  */
 #include "mainwindow.h"
-enum
-{
+ enum
+ {
     TASK_ID= 0,
     TASK_DESCRIPTION,
     NUM_COLS
@@ -45,10 +45,10 @@ destroy_objects()
 static void 
 add_task_to_ui(TodoTask* task)
 {
-        GtkTreeIter iter;
-        gtk_list_store_append (list_store, &iter);
-        gtk_list_store_set (list_store, &iter, TASK_ID,task->id,
-                TASK_DESCRIPTION, task->description,-1);
+    GtkTreeIter iter;
+    gtk_list_store_append (list_store, &iter);
+    gtk_list_store_set (list_store, &iter, TASK_ID,task->id,
+        TASK_DESCRIPTION, task->description,-1);
 }
 
 static void 
@@ -96,6 +96,12 @@ add_task_to_datalist(TodoTask* task)
 static void 
 load_tasks()
 {
+    if (access ("tasks.json",F_OK)==-1)
+    {
+        // File doesn't exist. No need to continue with the rest of the code.
+        return;
+    }
+    
     JsonParser* parser=json_parser_new();
 
     GError* err = NULL;
@@ -136,32 +142,32 @@ load_tasks()
         /* Set aside memory for the id string and copy the string
          * from json into the newly created one.
          */
-        glong task_id_size = g_utf8_strlen (id,-1) + 1;
-        gchar* task_id = g_malloc (task_id_size);
-        g_utf8_strncpy (task_id, id, task_id_size);
+         glong task_id_size = g_utf8_strlen (id,-1) + 1;
+         gchar* task_id = g_malloc (task_id_size);
+         g_utf8_strncpy (task_id, id, task_id_size);
 
-        task->id = task_id;
+         task->id = task_id;
 
         /*  Allocate memory for the task description string and copy
          *  the description obtained json into the newly created description
          *  string.
          */
-        glong task_desc_size = g_utf8_strlen (desc,-1) +  1;
-        gchar* task_desc = g_malloc (task_desc_size);
-        g_utf8_strncpy (task_desc, desc, task_desc_size);
+         glong task_desc_size = g_utf8_strlen (desc,-1) +  1;
+         gchar* task_desc = g_malloc (task_desc_size);
+         g_utf8_strncpy (task_desc, desc, task_desc_size);
 
-        task->description = task_desc;
+         task->description = task_desc;
 
         /* Add the parsed task to the ui and datalist data structure */
-        add_task_to_ui(task);
-        add_task_to_datalist(task);
-        
-        json_reader_end_element (reader);
-    }
+         add_task_to_ui(task);
+         add_task_to_datalist(task);
 
-    g_object_unref (reader);
-    g_object_unref (parser);
-}
+         json_reader_end_element (reader);
+     }
+
+     g_object_unref (reader);
+     g_object_unref (parser);
+ }
 
 /*
  *static void print_all_tasks (GQuark key_id,
@@ -171,43 +177,94 @@ load_tasks()
  *    g_print("--> %s\n",task->id);
  *}
  */
-static void 
-store_tasks()
-{
+ static void 
+ store_tasks()
+ {
     JsonBuilder* json_builder = json_builder_new ();
-    assert (data_list != NULL);
+    
+    if (data_list != NULL){
 
-    json_builder_begin_array (json_builder);
-    g_datalist_foreach (&data_list, store_task, json_builder); 
-    json_builder_end_array (json_builder);
+        json_builder_begin_array (json_builder);
+        g_datalist_foreach (&data_list, store_task, json_builder); 
+        json_builder_end_array (json_builder);
 
-    JsonGenerator* gen = json_generator_new();
-    JsonNode* root = json_builder_get_root(json_builder);
-    json_generator_set_root (gen, root);
+        JsonGenerator* gen = json_generator_new();
+        JsonNode* root = json_builder_get_root(json_builder);
+        json_generator_set_root (gen, root);
 
-    GError* err = NULL;
+        GError* err = NULL;
 
-    if (!json_generator_to_file(gen, "tasks.json", &err))
-    {
-        g_print ("Error:%s\n", err->message);
+        /*FILE* fp = fopen ("tasks.json", "ab+");
+        assert (fp != NULL);
+        fclose (fp);*/
+      
+        if (!json_generator_to_file(gen, "tasks.json", &err))
+        {
+            g_print ("Error:%s\n", err->message);
+        }
+
+        g_datalist_clear (&data_list);
+
+        json_node_free (root);
+        g_object_unref (gen);
+        g_object_unref (json_builder);
     }
 
-    g_datalist_clear (&data_list);
-
-    json_node_free (root);
-    g_object_unref (gen);
-    g_object_unref (json_builder);
     destroy_objects ();
 }
 
+static void
+set_selected (TodoTask* task){
+    GtkTreeIter iter;
+    GtkTreeSelection* selection=gtk_tree_view_get_selection (GTK_TREE_VIEW (tasks_treeview));
+    GtkTreeModel* model = GTK_TREE_MODEL(list_store);
+    
+    GList* selected = gtk_tree_selection_get_selected_rows (selection,&model);
+    GList* first = g_list_first (selected);
+
+    if (first != NULL)
+    {
+        GtkTreePath* path = (GtkTreePath*)first->data;
+        gtk_tree_model_get_iter (GTK_TREE_MODEL (list_store), &iter, path);
+
+        gtk_list_store_set (list_store, &iter, TASK_ID,task->id,
+            TASK_DESCRIPTION, task->description,-1);
+    }
+}
+
+static void
+delete_selected(){
+
+
+    GtkTreeIter iter;
+    GtkTreeSelection* selection=gtk_tree_view_get_selection (GTK_TREE_VIEW (tasks_treeview));
+    GtkTreeModel* model = GTK_TREE_MODEL(list_store);
+
+    GList* selected = gtk_tree_selection_get_selected_rows (selection,&model);
+    GList* first = g_list_first (selected);
+
+    if (first != NULL)
+    {
+        gchar* id = NULL;
+        GtkTreePath* path = (GtkTreePath*)first->data;
+        gtk_tree_model_get_iter (GTK_TREE_MODEL (list_store), &iter, path);
+        gtk_tree_model_get (model, &iter, TASK_ID, &id, -1);
+
+        GQuark quark = g_quark_from_string (id);
+        g_datalist_id_remove_data (&data_list, quark);
+
+        gtk_list_store_remove (list_store, &iter);
+    }
+}
 
 static void 
-on_task_added(GObject* obj, gpointer data){
+on_task_added(GObject* obj, gpointer data)
+{
     assert (data != NULL);
     TodoTask* task = (TodoTask*) data;
     assert (task != NULL);
 
-    if (selected_task_id == NULL || task->id != selected_task_id)
+    if (selected_task_id == NULL || strcmp(task->id,selected_task_id)!=0)
     {
         add_task_to_ui (task);
 
@@ -216,7 +273,8 @@ on_task_added(GObject* obj, gpointer data){
     }
     else
     {
-        g_print ("Task already exists!\n");
+        set_selected (task);
+        selected_task_id = NULL;
     }
 }
 
@@ -233,10 +291,10 @@ connect_signals()
     assert (mainwindow != NULL);
 
     g_signal_connect (GTK_WIDGET (mainwindow), "delete-event",
-            G_CALLBACK (on_main_window_delete), NULL);
+        G_CALLBACK (on_main_window_delete), NULL);
 
     g_signal_connect (task_window, "todotask-added",
-            G_CALLBACK (on_task_added), NULL);
+        G_CALLBACK (on_task_added), NULL);
 }
 
 GObject* 
@@ -272,10 +330,10 @@ init_treeview(GObject** treeview)
     GtkCellRenderer* renderer = gtk_cell_renderer_text_new ();
 
     task_description_col = gtk_tree_view_column_new_with_attributes ("TASK", 
-            renderer, "text", TASK_DESCRIPTION, NULL);
+        renderer, "text", TASK_DESCRIPTION, NULL);
 
     gtk_tree_view_append_column (GTK_TREE_VIEW (*treeview),
-            task_description_col);
+        task_description_col);
 
     list_store = gtk_list_store_new (NUM_COLS, G_TYPE_STRING, G_TYPE_STRING);
     assert (list_store != NULL);
@@ -312,7 +370,7 @@ todo_on_edit_btn_clicked()
     if (first != NULL)
     {
         GtkTreePath* path = (GtkTreePath*)first->data;
-        gchar* path_str = gtk_tree_path_to_string (path);
+        
 
         if (path != NULL)
         {
@@ -329,16 +387,32 @@ todo_on_edit_btn_clicked()
 
         }
     }
+}
 
-    //TODO not yet implemented
-    g_print ("btn_edit_clicked");
+static void
+on_message_dialog_response(GtkDialog* dialog, gint response_id
+    , gpointer user_data)
+{
+    if (response_id == GTK_RESPONSE_OK)
+    {
+        delete_selected ();
+    }
 }
 
 void 
 todo_on_delete_btn_clicked()
 {
-    //TODO not yet implemented
-    g_print ("btn_delete_clicked");
+    GtkWidget* dialog = gtk_message_dialog_new (GTK_WINDOW (mainwindow)
+        , GTK_DIALOG_DESTROY_WITH_PARENT
+        , GTK_MESSAGE_WARNING
+        , GTK_BUTTONS_OK_CANCEL
+        , "Are you sure you want to delete this task?");
+
+    g_signal_connect_swapped (dialog, "response", G_CALLBACK (on_message_dialog_response), dialog);
+    gtk_dialog_run (GTK_DIALOG (dialog));
+
+    gtk_widget_destroy (dialog);
+
 }
 
 void 

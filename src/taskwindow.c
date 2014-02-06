@@ -26,6 +26,8 @@ static GObject* text_view      = NULL;
 static GObject* task_window    = NULL;
 static GObject* save_btn       = NULL;
 static GObject* cancel_btn     = NULL;
+static TodoTask* task_to_edit  = NULL;
+static gboolean editing        = FALSE;
 
 static void 
 clear_text_buffer()
@@ -50,16 +52,24 @@ get_task()
     gchar* text = gtk_text_buffer_get_text (text_buffer, &start_iter,
             &end_iter, TRUE);
 
-    TodoTask* task = g_malloc (sizeof(TodoTask));
-    assert (task != NULL);
+    TodoTask* task = NULL;
 
-    // Get number of microseconds since 1 Jan 1970
-    gint64 time_stamp = g_get_real_time ();
-    gchar* id=g_malloc (21);
-    sprintf (id, "TASK_%ld", time_stamp);
+    if (editing == FALSE){
+        task = g_malloc (sizeof(TodoTask));
+        assert (task != NULL);
 
-    task->id = id;
+        // Get number of microseconds since 1 Jan 1970
+        gint64 time_stamp = g_get_real_time ();
+        gchar* id=g_malloc (21);
+        sprintf (id, "TASK_%ld", time_stamp);
+
+        task->id = id;
+    }else{
+        task = task_to_edit;
+    }
+
     task->description = text;
+    editing = FALSE;
 
     return task;
 }
@@ -139,6 +149,8 @@ todo_taskwindow_init()
 void todo_taskwindow_set_task(TodoTask* task)
 {
     assert (task != NULL);
+    task_to_edit = task;
+    editing = TRUE;
     GtkTextBuffer* text_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (text_view));
     gtk_text_buffer_set_text (text_buffer, task->description, g_utf8_strlen (task->description, -1));
     
